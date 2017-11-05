@@ -7,14 +7,6 @@ public class Grid : MonoBehaviour
 {
     [HideInInspector]
     public bool selfSide;
-    [HideInInspector]
-    public Grid left;
-    [HideInInspector]
-    public Grid right;
-    [HideInInspector]
-    public Grid top;
-    [HideInInspector]
-    public Grid bottom;
 
     private bool _dropping;
     private Color _color;
@@ -104,5 +96,10 @@ public class Grid : MonoBehaviour
         TimeMgr.Instance.RemoveTimeEvent(GetInstanceID().ToString());
         GameController gmCtrl = Singleton.GetInstance("GameController") as GameController;
         gmCtrl.TryRemove(this);
+    }
+
+    void OnDestroy()
+    {
+        TimeMgr.Instance.RemoveTimeEvent(GetInstanceID().ToString());
     }
 }

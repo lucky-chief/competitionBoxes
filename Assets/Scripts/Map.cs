@@ -154,29 +154,22 @@ public class Map
         for (int i = 0; i < toRemoveList.Count; i++)
         {
             GameObject.Destroy(toRemoveList[i].gameObject);
-           // StartDroping();
+           // StartDroping(toRemoveList[i].X);
         }
     }
 
-    public void StartDroping()
+    public void StartDroping(int colIndex)
     {
-        for (int i = 0; i < col; i++)
+        GameController gmCtrl = Singleton.GetInstance("GameController") as GameController;
+        if (-1 == colIndex)
         {
-            List<Grid> colGridList = selfColGridMap[i];
-            for (int j = 0; j < colGridList.Count; j++)
+            for (int i = 0; i < col; i++)
             {
-                Grid grid = colGridList[j];
-                if (j == 0)
-                {
-                    if (boxList[i].Y - grid.Y > 1)
-                    {
-                        grid.StartDrop(boxList[i]);
-                    }
-                    continue;
-                }
-                grid.StartDrop(colGridList[i - 1]);
+                gmCtrl.StartCoroutine(DropCol(i));
             }
+            return;
         }
+        gmCtrl.StartCoroutine(DropCol(colIndex));
     }
 
     public void RemoveBlankNode(bool self, Node node)
@@ -263,6 +256,31 @@ public class Map
                 enermyBlankNodeList.Add(new Node(j, i + (row >> 1) + 1));
             }
         }
+    }
+
+    void FreshGridFollowers()
+    {
+
+    }
+
+    IEnumerator DropCol(int colIdx)
+    {
+        List<Grid> colList = selfColGridMap[colIdx];
+
+        for (int i = 0; i < colList.Count; i++)
+        {
+            Grid grid = colList[i];
+            if (i == 0)
+            {
+                if (boxList[colIdx].Y - grid.Y > 1)
+                {
+                    grid.StartDrop(boxList[colIdx]);
+                }
+                continue;
+            }
+            grid.StartDrop(colList[i - 1]);
+        }
+        yield return 0;
     }
 
 }
