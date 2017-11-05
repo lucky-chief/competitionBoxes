@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Threading.Tasks;
 
 public class Map
 {
     public const int GRID_SIZE = 64;
     public const int GAP = 1;
 
-    public static float DROP_SPEED = 300;
+    public static float DROP_SPEED = 800;
     public int row = 12;
     public int col = 8;
     public int gridType = 5;
@@ -30,39 +29,132 @@ public class Map
     public Grid SpawnGrid(bool self, Node node = null)
     {
         List<Node> nodeList = selfBlankNodeList;
-        //List<Grid> colGridList = null;
         if (!self)
         {
             nodeList = enermyBlankNodeList;
         }
-        //if (node == null)
-        //{
-        //    node = nodeList[UnityEngine.Random.Range(0, nodeList.Count)];
-        //}
-       // colGridList = self ? selfColGridMap[node.x] : enermyColGridMap[node.x];
         Transform grid = GameObject.Instantiate<Transform>(gridPrefab);
         grid.SetParent(gridParent);
         grid.localScale = Vector3.one;
         grid.localPosition = new Vector3(node.x * (GAP + GRID_SIZE), node.y * (GAP + GRID_SIZE), 0);
         Grid gridCom = grid.GetComponent<Grid>();
         gridCom.selfSide = self;
-        //colGridList.Add(gridCom);
-        //colGridList.Sort((Grid small, Grid big) =>
-        //{
-        //    return big.Y - small.X;
-        //});
+        gridCom.Color = gridColors[Random.Range(0, gridColors.Length - 1)];
+       // gridCom.Color = gridColors[3];
         return gridCom;
     }
 
     public void AddColGridsMap(Grid grid)
     {
-        if(grid.Y < boxList[grid.X].Y)
+        if (grid.Y < boxList[grid.X].Y)
         {
             selfColGridMap[grid.X].Add(grid);
         }
         else
         {
             enermyColGridMap[grid.X].Add(grid);
+        }
+    }
+
+    public void Remove(Grid grid)
+    {
+        List<Grid> toRemoveList = new List<Grid>();
+        bool removedSelf = false;
+        int x = grid.X;
+
+        int colCount = selfColGridMap[x].Count;
+        if (colCount >= 3 &&
+            selfColGridMap[x][colCount - 3].Color == grid.Color &&
+            selfColGridMap[x][colCount - 2].Color == grid.Color)
+        {
+            toRemoveList.Add(selfColGridMap[x][colCount - 3]);
+            toRemoveList.Add(selfColGridMap[x][colCount - 2]);
+            selfColGridMap[x].RemoveAt(colCount - 3);
+            selfColGridMap[x].RemoveAt(colCount - 2);
+            if(!removedSelf)
+            {
+                toRemoveList.Add(grid);
+                selfColGridMap[x].RemoveAt(selfColGridMap[x].Count - 1);
+                removedSelf = true;
+            }
+        }
+
+        int[] flags = new int[5] { -1, -1, grid.Y, -1, -1 };
+
+        for (int i = x - 1; i >= x - 2 && i >= 0; i--)
+        {
+            bool finded = false;
+            List<Grid> gridList = selfColGridMap[i];
+            for(int j = 0; j < gridList.Count; j++)
+            {
+                if( gridList[j] != null && gridList[j].Y == grid.Y && gridList[j].Color == grid.Color)
+                {
+                    flags[i - x + 2] = j;
+                    finded = true;
+                    break;
+                }
+            }
+            if (!finded) break;
+        }
+
+        for (int i = x + 1; i <= x + 2 && i < col; i++)
+        {
+            bool finded = false;
+            List<Grid> gridList = selfColGridMap[i];
+            for (int j = 0; j < gridList.Count; j++)
+            {
+                if (gridList[j] != null && gridList[j].Y == grid.Y && gridList[j].Color == grid.Color)
+                {
+                    flags[i - x + 2] = j;
+                    finded = true;
+                    break;
+                }
+            }
+            if (!finded) break;
+        }
+
+
+        int min = 2;
+        int max = 2;
+        for(int i = 1; i >= 0 ; i--)
+        {
+            if(flags[i] != -1)
+            {
+                min--;
+                continue;
+            }
+            break;
+        }
+        for (int i = 3; i < 5; i++)
+        {
+            if (flags[i] != -1)
+            {
+                max++;
+                continue;
+            }
+            break;
+        }
+
+        if(max - min + 1 >= 3 )
+        {
+            for(int i = min; i <= max; i++)
+            {
+                if (i == 2) continue;
+                toRemoveList.Add(selfColGridMap[x + i - 2][flags[i]]);
+                selfColGridMap[x + i - 2].RemoveAt(flags[i]);
+            }
+            if (!removedSelf)
+            {
+                toRemoveList.Add(grid);
+                selfColGridMap[x].RemoveAt(selfColGridMap[x].Count - 1);
+                removedSelf = true;
+            }
+        }
+
+        for (int i = 0; i < toRemoveList.Count; i++)
+        {
+            GameObject.Destroy(toRemoveList[i].gameObject);
+           // StartDroping();
         }
     }
 
@@ -104,7 +196,7 @@ public class Map
         }
     }
 
-    public async void Init(Transform gridParent)
+    public void Init(Transform gridParent)
     {
         this.gridParent = gridParent;
         gridPrefab = Resources.Load<Transform>("Grid/Grid");
@@ -172,6 +264,7 @@ public class Map
             }
         }
     }
+
 }
 
 public class Node

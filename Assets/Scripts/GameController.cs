@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections.Generic;
 using System.Collections;
 
 public class GameController : MonoBehaviour
@@ -8,11 +9,11 @@ public class GameController : MonoBehaviour
     public GridEmitter selfEmitter { get; private set; }
     public GridEmitter enermyEmitter { get; private set; }
 
-    private SwipeRecognizer swipRg;
+    private List<Grid> _toRemoveGridList = new List<Grid>();
+    private bool _removing = false;
 
     void OnSwipe(SwipeGesture gesture)
     {
-        Debug.Log("gesture" + gesture.Direction);
         if(gesture.Direction == FingerGestures.SwipeDirection.Up || gesture.Direction == FingerGestures.SwipeDirection.UpperDiagonals)
         {
             selfEmitter.Shot();
@@ -24,6 +25,16 @@ public class GameController : MonoBehaviour
         else if (gesture.Direction == FingerGestures.SwipeDirection.Right)
         {
             selfEmitter.Step(1);
+        }
+    }
+
+    public void TryRemove(Grid grid)
+    {
+        _toRemoveGridList.Add(grid);
+        if(!_removing)
+        {
+            _removing = true;
+            StartCoroutine("Remove");
         }
     }
 
@@ -60,18 +71,29 @@ public class GameController : MonoBehaviour
         enermyEmitter.SpawnGrids();
     }
 
+    IEnumerator Remove()
+    {
+        while(_toRemoveGridList.Count > 0)
+        {
+            Grid grid = _toRemoveGridList[0];
+            _toRemoveGridList.RemoveAt(0);
+            map.AddColGridsMap(grid);
+            map.Remove(grid);
+            if (_toRemoveGridList.Count == 0)
+            {
+                _removing = false;
+                StopCoroutine("Remove");
+            }
+            yield return 0;
+        }
+    }
+
     void Start()
     {
-        
-
-        //swipRg = GameObject.Find("bg").GetComponent<SwipeRecognizer>();
-
-        //swipRg.OnGesture += OnSwipe;
     }
 
     private void OnDestroy()
     {
-       // swipRg.OnGesture -= OnSwipe;
     }
 
     void Update()

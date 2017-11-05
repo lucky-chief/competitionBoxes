@@ -5,21 +5,20 @@ using UnityEngine.UI;
 
 public class Grid : MonoBehaviour
 {
-
+    [HideInInspector]
     public bool selfSide;
+    [HideInInspector]
+    public Grid left;
+    [HideInInspector]
+    public Grid right;
+    [HideInInspector]
+    public Grid top;
+    [HideInInspector]
+    public Grid bottom;
 
     private bool _dropping;
     private Color _color;
     private Grid _followGrid;
-    void Start()
-    {
-
-    }
-
-    void Update()
-    {
-
-    }
 
     private void TimeEventUpdate(float deltaTime)
     {
@@ -33,7 +32,7 @@ public class Grid : MonoBehaviour
                 }
                 else
                 {
-                    if(_followGrid.Dropping)
+                    if (_followGrid.Dropping)
                     {
                         transform.localPosition += Vector3.up * Map.DROP_SPEED * deltaTime;
                     }
@@ -100,9 +99,10 @@ public class Grid : MonoBehaviour
 
     public void StopDrop()
     {
+       // Debug.Log(string.Format("StopDrop: X={0},Y={1}", X, Y));
         _dropping = false;
         TimeMgr.Instance.RemoveTimeEvent(GetInstanceID().ToString());
         GameController gmCtrl = Singleton.GetInstance("GameController") as GameController;
-        gmCtrl.map.AddColGridsMap(this);
+        gmCtrl.TryRemove(this);
     }
 }
